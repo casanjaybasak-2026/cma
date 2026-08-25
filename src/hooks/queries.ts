@@ -4,12 +4,35 @@ import type {
   ApprovalPack,
   Branch,
   DocumentCategory,
+  DocumentMaster,
   DocumentRequirement,
   DocumentRow,
   EmailLog,
   LoanApplication,
   LoanCategory,
 } from '@/types/database'
+
+export function useDocumentMasterCatalog(searchTerm: string) {
+  return useQuery({
+    queryKey: ['document_master', searchTerm],
+    queryFn: async () => {
+      let query = supabase
+        .from('document_master')
+        .select('*')
+        .eq('active', true)
+        .order('category_group')
+        .order('name')
+        .limit(500)
+      if (searchTerm.trim()) {
+        const like = `%${searchTerm.trim()}%`
+        query = query.or(`name.ilike.${like},code.ilike.${like}`)
+      }
+      const { data, error } = await query
+      if (error) throw error
+      return (data ?? []) as DocumentMaster[]
+    },
+  })
+}
 
 export function useDocumentCategories() {
   return useQuery({
@@ -47,17 +70,27 @@ export function useBranches() {
   })
 }
 
-export function useChecklist(loanCategoryId: string | undefined) {
+/**
+ * Template requirements for a loan category (application_id is null), plus
+ * — when applicationId is given — any ad-hoc requirements added to that one
+ * application via the Add Document picker. Omit applicationId for checklist
+ * previews (New Application form) or admin template management (Settings).
+ */
+export function useChecklist(loanCategoryId: string | undefined, applicationId?: string) {
   return useQuery({
-    queryKey: ['document_requirements', loanCategoryId],
+    queryKey: ['document_requirements', loanCategoryId, applicationId],
     enabled: !!loanCategoryId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('document_requirements')
         .select('*, document_categories(*)')
-        .eq('loan_category_id', loanCategoryId as string)
         .eq('active', true)
-        .order('sequence')
+
+      query = applicationId
+        ? query.or(`application_id.is.null,application_id.eq.${applicationId}`).eq('loan_category_id', loanCategoryId as string)
+        : query.is('application_id', null).eq('loan_category_id', loanCategoryId as string)
+
+      const { data, error } = await query.order('sequence')
       if (error) throw error
       return (data ?? []) as DocumentRequirement[]
     },

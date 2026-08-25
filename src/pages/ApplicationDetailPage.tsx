@@ -14,7 +14,7 @@ export default function ApplicationDetailPage() {
   const activeTab = tab ?? 'scanner'
 
   const { data: application, isLoading: loadingApp } = useApplication(id)
-  const { data: requirements, isLoading: loadingChecklist } = useChecklist(application?.loan_category_id)
+  const { data: requirements, isLoading: loadingChecklist } = useChecklist(application?.loan_category_id, id)
   const { data: documents, isLoading: loadingDocs, refetch } = useApplicationDocuments(id)
 
   const entries = useMemo(

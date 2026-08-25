@@ -18,7 +18,7 @@ export function ReviewTab({
   stats: CompletenessStats
   onChanged: () => void
 }) {
-  const { data: requirements } = useChecklist(application.loan_category_id)
+  const { data: requirements } = useChecklist(application.loan_category_id, application.id)
   const [missingOpen, setMissingOpen] = useState(false)
 
   const missing = entries.filter((e) => e.requirement.required && e.displayStatus === 'pending')

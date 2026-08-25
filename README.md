@@ -136,6 +136,32 @@ structure and sequential numbering described in the spec, plus a generated
 document row (`uploaded_by`, `submitted_for_verification_by`, `verified_by`)
 and in the audit log.
 
+**Document master catalog & ad-hoc checklist items.** `document_master`
+holds the bank's real 354-document master list (16 groups: Common KYC,
+Home/Property, MSME, Agriculture, Education, Vehicle, Gold Loan, SHG/JLG,
+Staff/Pensioner, Trade Finance/BG/LC, Loan Against Deposits/Securities,
+Legal/Security/Pre-sanction, Sanction/Monitoring/Compliance, Locker,
+Consumer Credit, General/Other), imported verbatim with each document's
+original bank code. From the Document Scanner screen, **Add Document**
+searches this catalog and attaches any additional document to that one
+specific application — via `document_requirements.application_id`, which
+distinguishes a shared per-loan-category template row (`NULL`) from an
+ad-hoc row scoped to a single application. This never changes the default
+checklist for anyone else.
+
+**Fill & Generate** — for checklist items that are letters, declarations,
+undertakings or application-type paperwork rather than third-party-issued
+evidence, **Fill & Generate** (next to Scan/Upload on every checklist row)
+opens a short form, auto-fills the applicant/application details, and
+generates a formatted PDF instantly via `jsPDF` — saved through the same
+pipeline as a scanned upload (`src/components/documents/FillGenerateModal.tsx`).
+
+**Quick ZIP / Email** — the Document Scanner toolbar has a **Download All
+(ZIP)** button (`src/lib/quickZip.ts`) that packages whatever is currently
+uploaded on demand, with no readiness gate and no `approval_packs` row —
+distinct from the gated, audited **Approval Pack** ZIP — plus a direct
+**Email** shortcut to the Email tab.
+
 ## Known Limitations / Follow-ups
 
 - Deactivating a user in Settings revokes their data access immediately

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Eye, Download, RefreshCcw, Trash2, CheckCircle2, XCircle, MessageSquare, Send } from 'lucide-react'
+import { Eye, Download, RefreshCcw, Trash2, CheckCircle2, XCircle, MessageSquare, Send, FileSignature } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ScanUploadModal } from '@/components/documents/ScanUploadModal'
 import { DocumentViewerModal } from '@/components/documents/DocumentViewerModal'
+import { FillGenerateModal } from '@/components/documents/FillGenerateModal'
 import { RemarksModal } from './RemarksModal'
 import type { ChecklistEntry } from '@/lib/completeness'
 import type { DocumentRequirement, DocumentRow, LoanApplication } from '@/types/database'
@@ -34,6 +35,7 @@ export function ReviewDocumentTable({
 
   const [viewDoc, setViewDoc] = useState<DocumentRow | null>(null)
   const [scanTarget, setScanTarget] = useState<{ requirement: DocumentRequirement; existing: DocumentRow | null } | null>(null)
+  const [generateTarget, setGenerateTarget] = useState<{ requirement: DocumentRequirement; existing: DocumentRow | null } | null>(null)
   const [remarksDoc, setRemarksDoc] = useState<DocumentRow | null>(null)
   const [deleteDoc, setDeleteDoc] = useState<DocumentRow | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -125,11 +127,18 @@ export function ReviewDocumentTable({
                             </>
                           )}
                           {canUpload && (
-                            <IconBtn
-                              label={doc ? 'Replace' : 'Scan / Upload'}
-                              icon={RefreshCcw}
-                              onClick={() => setScanTarget({ requirement: entry.requirement, existing: doc })}
-                            />
+                            <>
+                              <IconBtn
+                                label={doc ? 'Replace' : 'Scan / Upload'}
+                                icon={RefreshCcw}
+                                onClick={() => setScanTarget({ requirement: entry.requirement, existing: doc })}
+                              />
+                              <IconBtn
+                                label="Fill & Generate"
+                                icon={FileSignature}
+                                onClick={() => setGenerateTarget({ requirement: entry.requirement, existing: doc })}
+                              />
+                            </>
                           )}
                           {doc && canUpload && doc.status === 'uploaded' && (
                             <IconBtn
@@ -204,6 +213,17 @@ export function ReviewDocumentTable({
           allRequirements={allRequirements}
           existingDocument={scanTarget.existing}
           existingDocumentsForApp={existingDocumentsForApp}
+          onSaved={onChanged}
+        />
+      )}
+
+      {generateTarget && (
+        <FillGenerateModal
+          open
+          onClose={() => setGenerateTarget(null)}
+          application={application}
+          requirement={generateTarget.requirement}
+          existingDocument={generateTarget.existing}
           onSaved={onChanged}
         />
       )}

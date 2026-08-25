@@ -71,7 +71,19 @@ export interface DocumentRequirement {
   sequence: number
   active: boolean
   classification_keywords: string[]
+  application_id?: string | null
+  master_document_id?: string | null
   document_categories?: DocumentCategory
+}
+
+export interface DocumentMaster {
+  id: string
+  code: string
+  name: string
+  category_group: string
+  document_category_id: string
+  priority: string | null
+  active: boolean
 }
 
 export interface LoanApplication {
