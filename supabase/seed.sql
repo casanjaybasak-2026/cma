@@ -29,26 +29,32 @@ begin
   select id into v_branch_mgr from branches where code = 'BR-MGR-001';
 
   -- ---- demo auth users -----------------------------------------------------
+  -- Every text column GoTrue scans on login must be '' rather than NULL
+  -- (email_change, email_change_token_new, etc. have no column default and
+  -- a NULL there makes GoTrue fail login with "Database error querying
+  -- schema" / "converting NULL to string is unsupported").
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password,
     email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
-    created_at, updated_at, confirmation_token, recovery_token
+    created_at, updated_at, confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone_change, phone_change_token, reauthentication_token
   ) values
   ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
     'admin@bank.demo', crypt('Demo@12345', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}', '{"name":"Ananya Rao","role":"admin"}', now(), now(), '', ''),
+    '{"provider":"email","providers":["email"]}', '{"name":"Ananya Rao","role":"admin"}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
     'manager@bank.demo', crypt('Demo@12345', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}', '{"name":"Vikram Shah","role":"branch_manager"}', now(), now(), '', ''),
+    '{"provider":"email","providers":["email"]}', '{"name":"Vikram Shah","role":"branch_manager"}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
     'credit@bank.demo', crypt('Demo@12345', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}', '{"name":"Priya Menon","role":"credit_officer"}', now(), now(), '', ''),
+    '{"provider":"email","providers":["email"]}', '{"name":"Priya Menon","role":"credit_officer"}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
     'maker@bank.demo', crypt('Demo@12345', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}', '{"name":"Rahul Verma","role":"maker"}', now(), now(), '', ''),
+    '{"provider":"email","providers":["email"]}', '{"name":"Rahul Verma","role":"maker"}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
     'checker@bank.demo', crypt('Demo@12345', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}', '{"name":"Sana Iyer","role":"checker"}', now(), now(), '', '');
+    '{"provider":"email","providers":["email"]}', '{"name":"Sana Iyer","role":"checker"}', now(), now(), '', '', '', '', '', '', '', '');
 
   select id into v_admin_id from auth.users where email = 'admin@bank.demo';
   select id into v_manager_id from auth.users where email = 'manager@bank.demo';
