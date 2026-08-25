@@ -173,6 +173,7 @@ export function DocumentChecklistTable({
           onClose={() => setGenerateTarget(null)}
           application={application}
           requirement={generateTarget.requirement}
+          entries={entries}
           existingDocument={generateTarget.existing}
           onSaved={onChanged}
         />

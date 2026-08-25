@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PDFDocument } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { FileSignature, Loader2, AlertTriangle } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { supabase } from '@/lib/supabaseClient'
@@ -7,8 +7,73 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { writeAuditLog } from '@/lib/audit'
 import { buildLoanDocumentPath } from '@/lib/storagePaths'
+import { formatDateTime } from '@/lib/format'
 import { ANNEXURE_TEMPLATE } from '@/lib/fillableTemplates'
+import type { ChecklistEntry } from '@/lib/completeness'
 import type { DocumentRequirement, DocumentRow, LoanApplication } from '@/types/database'
+
+/**
+ * Appends a "Schedule of Documents Attached" page to the filled Annexure —
+ * a plain enclosure list of every other document already on this
+ * application's checklist, so the Annexure travels with a record of what
+ * accompanies it. The source AcroForm has no such section, so this is
+ * drawn as a fresh page rather than filled into existing fields.
+ */
+async function appendDocumentSchedule(
+  pdfDoc: PDFDocument,
+  application: LoanApplication,
+  entries: ChecklistEntry[],
+  excludeRequirementId: string
+) {
+  const attached = entries.filter((e) => e.document && e.requirement.id !== excludeRequirementId)
+  if (attached.length === 0) return
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const page = pdfDoc.addPage([595.28, 841.89]) // A4 portrait, in points
+  const margin = 56
+  const pageWidth = page.getWidth()
+  let y = page.getHeight() - 60
+
+  page.drawText('SCHEDULE OF DOCUMENTS ATTACHED', { x: margin, y, size: 13, font: bold })
+  y -= 20
+  page.drawText(`Annexure to Application No. ${application.application_no} — ${application.customer_name}`, {
+    x: margin,
+    y,
+    size: 10,
+    font,
+  })
+  y -= 14
+  page.drawText(`Generated: ${formatDateTime(new Date())}`, { x: margin, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) })
+  y -= 26
+
+  const colSrX = margin
+  const colDocX = margin + 40
+  const colStatusX = pageWidth - margin - 110
+
+  page.drawText('Sr', { x: colSrX, y, size: 9, font: bold })
+  page.drawText('Document', { x: colDocX, y, size: 9, font: bold })
+  page.drawText('Status', { x: colStatusX, y, size: 9, font: bold })
+  y -= 6
+  page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 0.5, color: rgb(0.6, 0.6, 0.6) })
+  y -= 16
+
+  let sr = 1
+  let currentPage = page
+  for (const entry of attached) {
+    if (y < 60) {
+      currentPage = pdfDoc.addPage([595.28, 841.89])
+      y = currentPage.getHeight() - 60
+    }
+    const name = entry.requirement.document_name
+    const truncated = name.length > 70 ? `${name.slice(0, 67)}...` : name
+    currentPage.drawText(String(sr), { x: colSrX, y, size: 9, font })
+    currentPage.drawText(truncated, { x: colDocX, y, size: 9, font })
+    currentPage.drawText(entry.displayStatus.replace(/_/g, ' '), { x: colStatusX, y, size: 9, font })
+    y -= 16
+    sr += 1
+  }
+}
 
 /**
  * Fills the bank's real Annexure PDF form (an AcroForm — see
@@ -21,6 +86,7 @@ export function FillAnnexureModal({
   onClose,
   application,
   requirement,
+  entries,
   existingDocument,
   onSaved,
 }: {
@@ -28,6 +94,7 @@ export function FillAnnexureModal({
   onClose: () => void
   application: LoanApplication
   requirement: DocumentRequirement
+  entries: ChecklistEntry[]
   existingDocument?: DocumentRow | null
   onSaved: () => void
 }) {
@@ -75,8 +142,10 @@ export function FillAnnexureModal({
         }
       }
       form.flatten()
+      await appendDocumentSchedule(pdfDoc, application, entries, requirement.id)
       const filledBytes = await pdfDoc.save()
       const blob = new Blob([filledBytes as BlobPart], { type: 'application/pdf' })
+      const pageCount = pdfDoc.getPageCount()
 
       const fileName = `Annexure_${application.application_no}_${Date.now()}.pdf`
       const categoryCode = requirement.document_categories?.code ?? 'APPLICATION'
@@ -98,7 +167,7 @@ export function FillAnnexureModal({
           storage_path: storagePath,
           file_type: 'application/pdf',
           file_size: blob.size,
-          page_count: 1,
+          page_count: pageCount,
           document_type: requirement.document_name,
           classification_confidence: 100,
           status: 'uploaded',
@@ -154,7 +223,8 @@ export function FillAnnexureModal({
         <p className="rounded-md bg-bank-50 px-3 py-2 text-xs text-bank-800">
           This fills the bank's actual Annexure form (a Demand Promissory Note) with the details below
           and saves the completed PDF — the applicant/branch fields are pre-filled from this application.
-          Leave a field blank if it does not apply.
+          Leave a field blank if it does not apply. A <strong>Schedule of Documents Attached</strong> page
+          listing every other document already on this application's checklist ({entries.filter((e) => e.document && e.requirement.id !== requirement.id).length} currently) is added automatically.
         </p>
 
         {loadError && (

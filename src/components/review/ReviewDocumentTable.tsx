@@ -226,6 +226,7 @@ export function ReviewDocumentTable({
           onClose={() => setGenerateTarget(null)}
           application={application}
           requirement={generateTarget.requirement}
+          entries={entries}
           existingDocument={generateTarget.existing}
           onSaved={onChanged}
         />
