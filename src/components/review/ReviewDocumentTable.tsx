@@ -8,7 +8,8 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ScanUploadModal } from '@/components/documents/ScanUploadModal'
 import { DocumentViewerModal } from '@/components/documents/DocumentViewerModal'
-import { FillGenerateModal } from '@/components/documents/FillGenerateModal'
+import { FillAnnexureModal } from '@/components/documents/FillAnnexureModal'
+import { ANNEXURE_TEMPLATE } from '@/lib/fillableTemplates'
 import { RemarksModal } from './RemarksModal'
 import type { ChecklistEntry } from '@/lib/completeness'
 import type { DocumentRequirement, DocumentRow, LoanApplication } from '@/types/database'
@@ -133,11 +134,13 @@ export function ReviewDocumentTable({
                                 icon={RefreshCcw}
                                 onClick={() => setScanTarget({ requirement: entry.requirement, existing: doc })}
                               />
-                              <IconBtn
-                                label="Fill & Generate"
-                                icon={FileSignature}
-                                onClick={() => setGenerateTarget({ requirement: entry.requirement, existing: doc })}
-                              />
+                              {entry.requirement.code === ANNEXURE_TEMPLATE.requirementCode && (
+                                <IconBtn
+                                  label="Fill Annexure"
+                                  icon={FileSignature}
+                                  onClick={() => setGenerateTarget({ requirement: entry.requirement, existing: doc })}
+                                />
+                              )}
                             </>
                           )}
                           {doc && canUpload && doc.status === 'uploaded' && (
@@ -218,7 +221,7 @@ export function ReviewDocumentTable({
       )}
 
       {generateTarget && (
-        <FillGenerateModal
+        <FillAnnexureModal
           open
           onClose={() => setGenerateTarget(null)}
           application={application}

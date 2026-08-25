@@ -5,12 +5,13 @@ import { Eye, FileSignature, Mail, Plus, RefreshCcw, ScanLine, PackageCheck, Loa
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ScanUploadModal } from './ScanUploadModal'
 import { DocumentViewerModal } from './DocumentViewerModal'
-import { FillGenerateModal } from './FillGenerateModal'
+import { FillAnnexureModal } from './FillAnnexureModal'
 import { AddDocumentModal } from './AddDocumentModal'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { buildQuickZip } from '@/lib/quickZip'
 import { downloadBlob } from '@/lib/exportReports'
+import { ANNEXURE_TEMPLATE } from '@/lib/fillableTemplates'
 import type { ChecklistEntry } from '@/lib/completeness'
 import type { DocumentRequirement, DocumentRow, LoanApplication } from '@/types/database'
 
@@ -132,13 +133,15 @@ export function DocumentChecklistTable({
                                 </>
                               )}
                             </button>
-                            <button
-                              className="btn-ghost btn-sm"
-                              onClick={() => setGenerateTarget({ requirement: entry.requirement, existing: entry.document })}
-                              title="Fill a short form and generate this document instantly"
-                            >
-                              <FileSignature className="h-3.5 w-3.5" /> Fill &amp; Generate
-                            </button>
+                            {entry.requirement.code === ANNEXURE_TEMPLATE.requirementCode && (
+                              <button
+                                className="btn-ghost btn-sm"
+                                onClick={() => setGenerateTarget({ requirement: entry.requirement, existing: entry.document })}
+                                title="Fill the bank's Annexure form and generate it instantly"
+                              >
+                                <FileSignature className="h-3.5 w-3.5" /> Fill Annexure
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
@@ -165,7 +168,7 @@ export function DocumentChecklistTable({
       )}
 
       {generateTarget && (
-        <FillGenerateModal
+        <FillAnnexureModal
           open
           onClose={() => setGenerateTarget(null)}
           application={application}
