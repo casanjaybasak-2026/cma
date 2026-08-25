@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Eye, FileSignature, Mail, Plus, RefreshCcw, ScanLine, PackageCheck, Loader2 } from 'lucide-react'
+import { Eye, FileSignature, Mail, Plus, RefreshCcw, ScanLine, PackageCheck, Loader2, Sparkles } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ScanUploadModal } from './ScanUploadModal'
 import { DocumentViewerModal } from './DocumentViewerModal'
 import { FillAnnexureModal } from './FillAnnexureModal'
 import { AddDocumentModal } from './AddDocumentModal'
+import { AiDocumentIdentifierModal } from './AiDocumentIdentifierModal'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { buildQuickZip } from '@/lib/quickZip'
@@ -37,6 +38,7 @@ export function DocumentChecklistTable({
   const [generateTarget, setGenerateTarget] = useState<{ requirement: DocumentRequirement; existing: DocumentRow | null } | null>(null)
   const [viewDoc, setViewDoc] = useState<DocumentRow | null>(null)
   const [addDocOpen, setAddDocOpen] = useState(false)
+  const [aiIdentifierOpen, setAiIdentifierOpen] = useState(false)
   const [zipping, setZipping] = useState(false)
 
   const grouped = useMemo(() => {
@@ -72,6 +74,11 @@ export function DocumentChecklistTable({
           {entries.filter((e) => e.document).length} of {entries.length} checklist items have a document.
         </p>
         <div className="flex flex-wrap gap-2">
+          {canUpload && (
+            <button className="btn-secondary btn-sm" onClick={() => setAiIdentifierOpen(true)}>
+              <Sparkles className="h-3.5 w-3.5" /> AI Document Identifier
+            </button>
+          )}
           {canUpload && (
             <button className="btn-secondary btn-sm" onClick={() => setAddDocOpen(true)}>
               <Plus className="h-3.5 w-3.5" /> Add Document
@@ -186,6 +193,18 @@ export function DocumentChecklistTable({
           application={application}
           existingEntries={entries}
           onAdded={onRequirementsChanged}
+        />
+      )}
+
+      {aiIdentifierOpen && (
+        <AiDocumentIdentifierModal
+          open
+          onClose={() => setAiIdentifierOpen(false)}
+          application={application}
+          allRequirements={allRequirements}
+          entries={entries}
+          existingDocumentsForApp={existingDocumentsForApp}
+          onSaved={onChanged}
         />
       )}
 
